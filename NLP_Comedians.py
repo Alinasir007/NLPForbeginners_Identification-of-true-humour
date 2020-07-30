@@ -161,3 +161,6 @@ for index, comedian in enumerate(datanew.columns):
     plt.title(full_names[index])
 
 plt.show()
+
+#we are ready to go
+
