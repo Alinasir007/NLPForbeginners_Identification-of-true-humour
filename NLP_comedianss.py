@@ -151,7 +151,8 @@ wc= WordCloud(stopwords= stop_words, background_color='white', colormap='Dark2',
 
 import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize']= [16,6]
-
+full_names = ['Ali Wong', 'Anthony Jeselnik', 'Bill Burr', 'Bo Burnham', 'Dave Chappelle', 'Hasan Minhaj',
+              'Jim Jefferies', 'Joe Rogan', 'John Mulaney', 'Louis C.K.', 'Mike Birbiglia', 'Ricky Gervais']
 for index, comedian in enumerate(datanew.columns):
     wc.generate(data_clean.transcript[comedian])
 
@@ -162,5 +163,79 @@ for index, comedian in enumerate(datanew.columns):
 
 plt.show()
 
-#we are ready to go
+#Analysis
+# Find the number of unique words that each comedian uses
 
+# Identify the non-zero items in the document-term matrix, meaning that the word occurs at least once
+unique_list = []
+for comedian in datanew.columns:
+    uniques = datanew[comedian].to_numpy().nonzero()[0].size
+    unique_list.append(uniques)
+
+# Create a new dataframe that contains this unique word count
+data_words = pd.DataFrame(list(zip(full_names, unique_list)), columns=['comedian', 'unique_words'])
+data_unique_sort = data_words.sort_values(by='unique_words')
+print(data_unique_sort)
+
+# Calculate the words per minute of each comedian
+
+# Find the total number of words that a comedian uses
+total_list = []
+for comedian in datanew.columns:
+    totals = sum(datanew[comedian])
+    total_list.append(totals)
+
+# Comedy special run times from IMDB, in minutes
+run_times = [60, 59, 80, 60, 67, 73, 77, 63, 62, 58, 76, 79]
+
+# Let's add some columns to our dataframe
+data_words['total_words'] = total_list
+data_words['run_times'] = run_times
+data_words['words_per_minute'] = data_words['total_words'] / data_words['run_times']
+
+# Sort the dataframe by words per minute to see who talks the slowest and fastest
+data_wpm_sort = data_words.sort_values(by='words_per_minute')
+data_wpm_sort
+
+# Let's plot our findings
+import numpy as np
+
+y_pos = np.arange(len(data_words))
+
+plt.subplot(1, 2, 1)
+plt.barh(y_pos, data_unique_sort.unique_words, align='center')
+plt.yticks(y_pos, data_unique_sort.comedian)
+plt.title('Number of Unique Words', fontsize=20)
+
+plt.subplot(1, 2, 2)
+plt.barh(y_pos, data_wpm_sort.words_per_minute, align='center')
+plt.yticks(y_pos, data_wpm_sort.comedian)
+plt.title('Number of Words Per Minute', fontsize=20)
+
+plt.tight_layout()
+plt.show()
+
+# revisit profanity: most common words again.
+Counter(words).most_common()
+
+# Let's isolate just these bad words
+data_bad_words = datanew.transpose()[['fucking', 'fuck', 'shit']]
+data_profanity = pd.concat([data_bad_words.fucking + data_bad_words.fuck, data_bad_words.shit], axis=1)
+data_profanity.columns = ['f_word', 's_word']
+data_profanity
+
+# Let's create a scatter plot of our findings
+plt.rcParams['figure.figsize'] = [10, 8]
+
+for i, comedian in enumerate(data_profanity.index):
+    x = data_profanity.f_word.loc[comedian]
+    y = data_profanity.s_word.loc[comedian]
+    plt.scatter(x, y, color='blue')
+    plt.text(x + 1.5, y + 0.5, full_names[i], fontsize=10)
+    plt.xlim(-5, 155)
+
+plt.title('Number of Bad Words Used in Routine', fontsize=20)
+plt.xlabel('Number of F Bombs', fontsize=15)
+plt.ylabel('Number of S Words', fontsize=15)
+
+plt.show()
